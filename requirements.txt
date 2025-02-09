@@ -1,4 +1,5 @@
-python-telegram-bot
+pyrogram 
+tgcrypto
 Flask
 gunicorn
 aiohttp
