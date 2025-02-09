@@ -2,10 +2,10 @@ from pyrogram import Client, filters
 import os
 
 # 🔹 Telegram API Details
-API_ID = 1234567  # Replace with your API ID
-API_HASH = "your_api_hash"  # Replace with your API HASH
-BOT_TOKEN = "your_bot_token"  # Replace with your BotFather Token
-CHANNEL_USERNAME = "@your_channel_username"  # Use your channel username (or ID)
+API_ID = 24043364  # Replace with your API ID
+API_HASH = "b27094593db92b4e76ad1be7fb4ec817"  # Replace with your API HASH
+BOT_TOKEN = "7507479675:AAGnbw9YuMi6q9V0DUuWsK6DYuEKKJwju0U"  # Replace with your BotFather Token
+CHANNEL_USERNAME = "@msgboysproshre"  # Use your channel username (or ID)
 
 # 🔹 Bot Client Initialize
 bot = Client("storage_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
