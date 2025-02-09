@@ -2,10 +2,10 @@ from pyrogram import Client, filters
 import os
 
 # 🔹 Telegram API Details
-API_ID = 1234567  # Yahan apna API_ID daalein (my.telegram.org se milega)
-API_HASH = "your_api_hash"  # Apna API_HASH daalein
-BOT_TOKEN = "your_bot_token"  # Yahan BotFather se mila Token daalein
-CHAT_ID = -1001234567890  # Yahan apne private channel ka ID daalein (negative me hoga)
+API_ID = 24043364  # Yahan apna API_ID daalein (my.telegram.org se milega)
+API_HASH = "b27094593db92b4e76ad1be7fb4ec817"  # Apna API_HASH daalein
+BOT_TOKEN = "7507479675:AAGnbw9YuMi6q9V0DUuWsK6DYuEKKJwju0U"  # Yahan BotFather se mila Token daalein
+CHAT_ID = -1002165000013  # Yahan apne private channel ka ID daalein (negative me hoga)
 
 # 🔹 Bot Client Initialize
 bot = Client("storage_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
