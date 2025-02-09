@@ -2,10 +2,13 @@ from pyrogram import Client, filters
 import os
 
 # 🔹 Telegram API Details
-API_ID = 24043364  # Replace with your API ID
+API_ID = 240433647  # Replace with your API ID
 API_HASH = "b27094593db92b4e76ad1be7fb4ec817"  # Replace with your API HASH
 BOT_TOKEN = "7507479675:AAGnbw9YuMi6q9V0DUuWsK6DYuEKKJwju0U"  # Replace with your BotFather Token
-CHANNEL_USERNAME = "@msgboysproshre"  # Use your channel username (or ID)
+CHANNEL_USERNAME = "-1002165000013"  # Use your channel username (or -100xxxxxxxx)
+
+# 🔹 Dictionary to Store File IDs (Temporary)
+file_store = {}  # {message_id: file_id}
 
 # 🔹 Bot Client Initialize
 bot = Client("storage_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
@@ -36,52 +39,57 @@ def upload_file(client, message):
         message.reply_text("❌ Error! Cannot resolve channel ID. Ensure the bot is an admin in your channel.")
         return
 
-    file_id = message.document.file_id if message.document else message.video.file_id if message.video else message.photo.file_id
+    file_id = None
+    if message.document:
+        file_id = message.document.file_id
+    elif message.video:
+        file_id = message.video.file_id
+    elif message.photo:
+        file_id = message.photo.file_id
 
     try:
         sent_message = bot.send_document(chat_id, file_id, caption="📂 Stored File")
-        file_link = f"https://t.me/{bot.me.username}?start=file_{sent_message.message_id}"
-        message.reply_text(f"📁 File uploaded successfully!\n🆔 Message ID: {sent_message.message_id}\n🔗 Download: {file_link}")
+        
+        # ✅ Store the file_id linked to message_id
+        file_store[sent_message.id] = file_id
+        
+        file_link = f"https://t.me/{bot.me.username}?start=file_{sent_message.id}"
+        message.reply_text(f"📁 File uploaded successfully!\n🆔 Message ID: {sent_message.id}\n🔗 Download: {file_link}")
 
     except Exception as e:
         message.reply_text(f"❌ Error Uploading File: {e}")
 
-# 📥 Retrieve Files
+# 📥 Retrieve Files (Fix: Bots cannot use get_chat_history in private channels)
 @bot.on_message(filters.command("files"))
 def get_files(client, message):
-    chat_id = get_channel_id()
-    if not chat_id:
-        message.reply_text("❌ Error! Cannot resolve channel ID.")
+    if not file_store:
+        message.reply_text("📂 No files stored yet!")
         return
 
-    try:
-        updates = client.get_chat_history(chat_id, limit=5)  # Last 5 Files
-        response = "📂 Last Stored Files:\n\n"
-        for msg in updates:
-            response += f"📌 File ID: {msg.message_id}\n🔗 Download: https://t.me/{bot.me.username}?start=file_{msg.message_id}\n"
-        message.reply_text(response)
+    response = "📂 Stored Files:\n\n"
+    for msg_id, _ in list(file_store.items())[-5:]:  # Get last 5 files
+        response += f"📌 Message ID: {msg_id}\n🔗 Download: https://t.me/{bot.me.username}?start=file_{msg_id}\n"
 
-    except Exception as e:
-        message.reply_text(f"❌ Error Fetching Files: {e}")
+    message.reply_text(response)
 
 # 🔗 Get Direct Download Link
 @bot.on_message(filters.command("getlink"))
 def get_link(client, message):
-    chat_id = get_channel_id()
-    if not chat_id:
-        message.reply_text("❌ Error! Cannot resolve channel ID.")
-        return
-
     try:
-        msg_id = int(message.command[1])
-        file_message = bot.get_messages(chat_id, msg_id)
-
-        if not file_message.document and not file_message.video and not file_message.photo:
-            message.reply_text("❌ This message does not contain a file.")
+        if len(message.command) < 2:
+            message.reply_text("❌ Usage: /getlink <message_id>")
             return
         
+        msg_id = int(message.command[1])
+        
+        if msg_id not in file_store:
+            message.reply_text("❌ Error! Invalid Message ID or file not found.")
+            return
+
+        file_id = file_store[msg_id]
+
         # ✅ Get Direct File Link from Telegram
-        file_path = bot.get_file(file_message.document.file_id if file_message.document else file_message.video.file_id if file_message.video else file_message.photo.file_id).file_path
+        file_path = bot.get_file(file_id).file_path
         direct_link = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_path}"
         
         message.reply_text(f"📂 Direct Download Link:\n🔗 {direct_link}")
@@ -98,9 +106,20 @@ def delete_file(client, message):
         return
 
     try:
-        msg_id = int(message.command[1])  # Message ID Input
+        if len(message.command) < 2:
+            message.reply_text("❌ Usage: /delete <message_id>")
+            return
+
+        msg_id = int(message.command[1])
+
+        if msg_id not in file_store:
+            message.reply_text("❌ Error! Invalid Message ID or file not found.")
+            return
+
         client.delete_messages(chat_id, msg_id)
+        del file_store[msg_id]  # Remove from the stored list
         message.reply_text(f"✅ File (Message ID: {msg_id}) deleted successfully!")
+
     except Exception as e:
         message.reply_text(f"❌ Error! Invalid Message ID or No Permission: {e}")
 
