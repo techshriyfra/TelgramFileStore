@@ -2,10 +2,10 @@ from pyrogram import Client, filters
 import os
 
 # 🔹 Telegram API Details
-API_ID = 240433647  # Replace with your API ID
-API_HASH = "b27094593db92b4e76ad1be7fb4ec817"  # Replace with your API HASH
-BOT_TOKEN = "7507479675:AAGnbw9YuMi6q9V0DUuWsK6DYuEKKJwju0U"  # Replace with your BotFather Token
-CHANNEL_USERNAME = "-1002165000013"  # Use your channel username (or -100xxxxxxxx)
+API_ID = 240433647  # Ensure this is an integer, not a string
+API_HASH = "b27094593db92b4e76ad1be7fb4ec817"  # Ensure no spaces or typos
+BOT_TOKEN = "7507479675:AAGnbw9YuMi6q9V0DUuWsK6DYuEKKJwju0U"  # Must be correct
+CHANNEL_ID = -1002165000013  # Use numeric channel ID (ensure it's correct)
 
 # 🔹 Dictionary to Store File IDs (Temporary)
 file_store = {}  # {message_id: file_id}
@@ -22,23 +22,9 @@ def start(client, message):
                        "🔗 Use /getlink <message_id> to get a direct download link.\n"
                        "🗑 Use /delete <message_id> to remove a file.")
 
-# ✅ Resolving Chat ID (Fixes Peer ID Error)
-def get_channel_id():
-    try:
-        chat = bot.get_chat(CHANNEL_USERNAME)
-        return chat.id
-    except Exception as e:
-        print(f"Error Resolving Channel ID: {e}")
-        return None
-
 # 📤 File Upload Handler
 @bot.on_message(filters.document | filters.video | filters.photo)
 def upload_file(client, message):
-    chat_id = get_channel_id()
-    if not chat_id:
-        message.reply_text("❌ Error! Cannot resolve channel ID. Ensure the bot is an admin in your channel.")
-        return
-
     file_id = None
     if message.document:
         file_id = message.document.file_id
@@ -48,11 +34,12 @@ def upload_file(client, message):
         file_id = message.photo.file_id
 
     try:
-        sent_message = bot.send_document(chat_id, file_id, caption="📂 Stored File")
-        
+        # ✅ Using `client.send_document` instead of `bot.send_document`
+        sent_message = client.send_document(CHANNEL_ID, file_id, caption="📂 Stored File")
+
         # ✅ Store the file_id linked to message_id
         file_store[sent_message.id] = file_id
-        
+
         file_link = f"https://t.me/{bot.me.username}?start=file_{sent_message.id}"
         message.reply_text(f"📁 File uploaded successfully!\n🆔 Message ID: {sent_message.id}\n🔗 Download: {file_link}")
 
@@ -79,9 +66,9 @@ def get_link(client, message):
         if len(message.command) < 2:
             message.reply_text("❌ Usage: /getlink <message_id>")
             return
-        
+
         msg_id = int(message.command[1])
-        
+
         if msg_id not in file_store:
             message.reply_text("❌ Error! Invalid Message ID or file not found.")
             return
@@ -89,9 +76,9 @@ def get_link(client, message):
         file_id = file_store[msg_id]
 
         # ✅ Get Direct File Link from Telegram
-        file_path = bot.get_file(file_id).file_path
+        file_path = client.get_file(file_id).file_path
         direct_link = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_path}"
-        
+
         message.reply_text(f"📂 Direct Download Link:\n🔗 {direct_link}")
 
     except Exception as e:
@@ -100,11 +87,6 @@ def get_link(client, message):
 # 🗑 Delete File Handler
 @bot.on_message(filters.command("delete"))
 def delete_file(client, message):
-    chat_id = get_channel_id()
-    if not chat_id:
-        message.reply_text("❌ Error! Cannot resolve channel ID.")
-        return
-
     try:
         if len(message.command) < 2:
             message.reply_text("❌ Usage: /delete <message_id>")
@@ -116,7 +98,7 @@ def delete_file(client, message):
             message.reply_text("❌ Error! Invalid Message ID or file not found.")
             return
 
-        client.delete_messages(chat_id, msg_id)
+        client.delete_messages(CHANNEL_ID, msg_id)
         del file_store[msg_id]  # Remove from the stored list
         message.reply_text(f"✅ File (Message ID: {msg_id}) deleted successfully!")
 
